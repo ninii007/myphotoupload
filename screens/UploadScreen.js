@@ -7,7 +7,8 @@ import {
     StyleSheet,
     Platform,
     Alert,
-    Image
+    Image,
+    PermissionsAndroid
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import * as Progress from 'react-native-progress';
@@ -111,8 +112,115 @@ export default function UploadScreen() {
         setImage(null);
       };
 
+      requestCameraPermission = async () => {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            {
+              title: "App Camera Permission",
+              message:"App needs access to your camera ",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK"
+            }
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log("Camera permission given");
+          } else {
+            console.log("Camera permission denied");
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      };
+    
+      // Launch Camera
+      cameraLaunch = async () => {
+        let options = {
+          storageOptions: {
+            skipBackup: true,
+            path: 'images',
+          },
+        };
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            {
+              title: "App Camera Permission",
+              message:"App needs access to your camera ",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK"
+            }
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            ImagePicker.launchCamera(options, (res) => {
+              console.log('Response = ', res);
+    
+              if (res.didCancel) {
+                console.log('User cancelled image picker');
+              } else if (res.error) {
+                console.log('ImagePicker Error: ', res.error);
+              } else if (res.customButton) {
+                console.log('User tapped custom button: ', res.customButton);
+                alert(res.customButton);
+              } else {
+                const source = { uri: res.uri };
+                console.log('response', JSON.stringify(res));
+                // this.setState({
+                //   filePath: res,
+                //   fileData: res.data,
+                //   fileUri: res.uri
+                // });
+                setImage({uri:res.assets[0].uri})
+              }
+            });
+          } else {
+            console.log("Camera permission denied");
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    
+      imageGalleryLaunch = () => {
+        let options = {
+          storageOptions: {
+            skipBackup: true,
+            path: 'images',
+          },
+        };
+    
+        ImagePicker.launchImageLibrary(options, (res) => {
+          console.log('Response = ', res);
+    
+          if (res.didCancel) {
+            console.log('User cancelled image picker');
+          } else if (res.error) {
+            console.log('ImagePicker Error: ', res.error);
+          } else if (res.customButton) {
+            console.log('User tapped custom button: ', res.customButton);
+            alert(res.customButton);
+          } else {
+            const source = { uri: res.uri };
+            console.log('response', JSON.stringify(res));
+            this.setState({
+              filePath: res,
+              fileData: res.data,
+              fileUri: res.uri
+            });
+          }
+        });
+      }  
+    
+
+
     return (
         <SafeAreaView style={styles.container}>
+            <TouchableOpacity onPress={this.cameraLaunch} style={styles.button}  >
+              <Text style={styles.buttonText}>Launch Camera Directly</Text>
+          </TouchableOpacity>
+
             <TouchableOpacity style={styles.selectButton} onPress={selectImage}>
                 <Text style={styles.buttonText}>Pick an image</Text>
             </TouchableOpacity>
